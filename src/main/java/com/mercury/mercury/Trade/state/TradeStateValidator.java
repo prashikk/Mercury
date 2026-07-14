@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.state;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -14,17 +14,32 @@ public class TradeStateValidator {
     private static final Map<TradeStatus, Set<TradeStatus>> ALLOWED_TRANSITIONS = new EnumMap<>(TradeStatus.class);
 
     static {
-        ALLOWED_TRANSITIONS.put(TradeStatus.NEW, Set.of(TradeStatus.VALIDATED, TradeStatus.FAILED));
+        ALLOWED_TRANSITIONS.put(TradeStatus.NEW, Set.of(
+                TradeStatus.PENDING_APPROVAL,
+                TradeStatus.FAILED
+        ));
 
-        ALLOWED_TRANSITIONS.put(TradeStatus.VALIDATED, Set.of(TradeStatus.SETTLED, TradeStatus.FAILED));
+        ALLOWED_TRANSITIONS.put(TradeStatus.PENDING_APPROVAL, Set.of(
+                TradeStatus.APPROVED,
+                TradeStatus.FAILED
+        ));
+
+        ALLOWED_TRANSITIONS.put(TradeStatus.APPROVED, Set.of(
+                TradeStatus.VALIDATED,
+                TradeStatus.SETTLED,
+                TradeStatus.FAILED
+        ));
+
+        ALLOWED_TRANSITIONS.put(TradeStatus.VALIDATED, Set.of(
+                TradeStatus.SETTLED,
+                TradeStatus.FAILED
+        ));
 
         ALLOWED_TRANSITIONS.put(TradeStatus.SETTLED, Set.of());
-
         ALLOWED_TRANSITIONS.put(TradeStatus.FAILED, Set.of());
     }
 
     public void validateTransition(TradeStatus currentStatus, TradeStatus targetStatus) {
-
         log.info("Trade Lifecycle Started");
         log.info("Current Status: {}", currentStatus);
         log.info("Requested Status: {}", targetStatus);
@@ -43,7 +58,11 @@ public class TradeStateValidator {
                             currentStatus, targetStatus)
             );
         }
+
         log.info("Transition Allowed");
+        if (targetStatus == TradeStatus.APPROVED) {
+            log.info("Trade Approved successfully");
+        }
         if (targetStatus == TradeStatus.SETTLED) {
             log.info("Trade Settled");
         }

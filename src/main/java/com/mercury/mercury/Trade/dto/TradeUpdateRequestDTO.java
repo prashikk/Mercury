@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.dto;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;

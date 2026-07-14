@@ -1,7 +1,7 @@
 package com.mercury.mercury.Trade.specification;
 
 import com.mercury.mercury.Client.Enum.KycStatus;
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Common.SettlementException;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import org.springframework.http.HttpStatus;

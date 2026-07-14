@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.service;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.dto.TradeResponseDTO;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
@@ -52,7 +52,7 @@ class TradeLifecycleServiceTest {
         when(tradeMapper.toResponseDTO(any(TradeEntity.class))).thenReturn(mockResponse);
 
         // Act
-        TradeResponseDTO result = lifecycleService.TransationStatus(tradeId, TradeStatus.VALIDATED);
+        TradeResponseDTO result = lifecycleService.transationStatus(tradeId, TradeStatus.VALIDATED);
 
         // Assert
         assertNotNull(result);
@@ -72,7 +72,7 @@ class TradeLifecycleServiceTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () ->
-                lifecycleService.TransationStatus(invalidId, TradeStatus.VALIDATED)
+                lifecycleService.transationStatus(invalidId, TradeStatus.VALIDATED)
         );
 
         // Verify that the save operation was aborted completely to protect the system state

@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.service;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.SettlementValidator;
@@ -33,7 +33,7 @@ public class SettlementService {
                 .orElseThrow(() -> new RuntimeException("Trade not found with ID: " + tradeId));
 
         settlementValidator.validateSettlement(trade);
-        tradeLifecycleService.TransationStatus(tradeId, TradeStatus.SETTLED);
+        tradeLifecycleService.transationStatus(tradeId, TradeStatus.SETTLED);
         String settlementReference = generateSettlementReference();
 
         trade.setSettlementReference(settlementReference);

@@ -1,7 +1,7 @@
 package com.mercury.mercury.Trade.dto;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
-import com.mercury.mercury.Client.Enum.TradeType;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeType;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 

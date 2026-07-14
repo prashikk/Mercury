@@ -1,7 +1,6 @@
 package com.mercury.mercury.Trade.state;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
-import com.mercury.mercury.Trade.state.TradeStateValidator;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

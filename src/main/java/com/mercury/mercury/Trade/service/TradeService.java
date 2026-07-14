@@ -2,7 +2,7 @@ package com.mercury.mercury.Trade.service;
 
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.ClientRepo;
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Instruments.InstrumentRepo;
 import com.mercury.mercury.Trade.entity.TradeEntity;
@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -71,10 +72,22 @@ public class TradeService {
         tradeEntity.setClient_id(client);
         tradeEntity.setInstrument_id(instrument);
         tradeEntity.setStatus(TradeStatus.NEW);
-
         LocalDateTime now = LocalDateTime.now();
         tradeEntity.setTrade_date(now);
         tradeEntity.setSettled_date(now.plusDays(2));
+
+        BigDecimal totalValue = requestDTO.getPrice().multiply(BigDecimal.valueOf(requestDTO.getQuantity()));
+        BigDecimal Threshold = BigDecimal.valueOf(1000000);
+
+        if(totalValue.compareTo(Threshold) > 0){
+            tradeEntity.setStatus(TradeStatus.PENDING_APPROVAL);
+            log.info("High value trade detected. Trade status set to PENDING_APPROVAL.", totalValue);
+        }
+        else{
+            tradeEntity.setStatus(TradeStatus.VALIDATED);
+            log.info("Trade status set to VALIDATED.", totalValue);
+        }
+
 
         TradeEntity savedDate = tradeRepo.save(tradeEntity);
 

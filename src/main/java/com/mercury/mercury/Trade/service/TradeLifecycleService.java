@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.service;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.dto.TradeResponseDTO;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
@@ -25,7 +25,7 @@ public class TradeLifecycleService {
     }
 
     @Transactional
-    public TradeResponseDTO TransationStatus(Long Id, TradeStatus newStatus){
+    public TradeResponseDTO transationStatus(Long Id, TradeStatus newStatus){
         TradeEntity tradeEntity = tradeRepo.findById(Id).orElseThrow(() -> new RuntimeException("Trade not found with ID: " + Id));
 
         tradeStateValidator.validateTransition(tradeEntity.getStatus(), newStatus);

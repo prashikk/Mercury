@@ -1,8 +1,8 @@
 package com.mercury.mercury.Trade.entity;
 
 import com.mercury.mercury.Client.ClientEntity;
-import com.mercury.mercury.Client.Enum.TradeStatus;
-import com.mercury.mercury.Client.Enum.TradeType;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeType;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -88,4 +88,10 @@ public class TradeEntity {
 
     @Column(name = "settled_At")
     private LocalDateTime settled_at;
+
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
 }

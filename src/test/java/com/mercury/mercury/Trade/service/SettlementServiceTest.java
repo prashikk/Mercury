@@ -2,7 +2,7 @@ package com.mercury.mercury.Trade.service;
 
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.Enum.KycStatus;
-import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Common.SettlementException;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Trade.entity.TradeEntity;
@@ -54,7 +54,7 @@ class SettlementServiceTest {
         assertNotNull(result.get("settlementReference"));
         assertTrue(result.get("settlementReference").toString().startsWith("SET-"));
 
-        verify(lifecycleService, times(1)).TransationStatus(101L, TradeStatus.SETTLED);
+        verify(lifecycleService, times(1)).transationStatus(101L, TradeStatus.SETTLED);
         verify(tradeRepo, times(1)).save(trade);
     }
 

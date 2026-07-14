@@ -1,6 +1,6 @@
 package com.mercury.mercury.Trade.dto;
 
-import com.mercury.mercury.Client.Enum.TradeType;
+import com.mercury.mercury.Trade.Enum.TradeType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

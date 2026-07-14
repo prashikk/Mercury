@@ -1,13 +1,13 @@
 package com.mercury.mercury.Trade;
 
 import com.mercury.mercury.Trade.dto.*;
+import com.mercury.mercury.Trade.service.ApprovalService;
 import com.mercury.mercury.Trade.service.SettlementService;
 import com.mercury.mercury.Trade.service.TradeLifecycleService;
 import com.mercury.mercury.Trade.service.TradeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.groups.Default;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -21,11 +21,13 @@ public class TradeController {
     private final TradeService tradeService;
     public final TradeLifecycleService tradeLifecycleService;
     public final SettlementService settlementService;
+    public final ApprovalService approvalService;
 
-    public TradeController(TradeService tradeService, TradeLifecycleService tradeLifecycleService, SettlementService settlementService) {
+    public TradeController(TradeService tradeService, TradeLifecycleService tradeLifecycleService, SettlementService settlementService, ApprovalService approvalService) {
         this.tradeService = tradeService;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementService = settlementService;
+        this.approvalService = approvalService;
     }
 
     @PostMapping
@@ -55,7 +57,7 @@ public class TradeController {
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update Trade Status", description = "Drives the trade state machine forward following strict operational settlement rules. ")
     public ResponseEntity<TradeResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody TradeStatusUpdateRequest payload){
-        TradeResponseDTO response = tradeLifecycleService.TransationStatus(id, payload.getStatus());
+        TradeResponseDTO response = tradeLifecycleService.transationStatus(id, payload.getStatus());
         return ResponseEntity.ok(response);
     }
 
@@ -63,6 +65,19 @@ public class TradeController {
     @Operation(summary = "POST Settle Trade", description = "Executes automated back-office clearing pipeline actions to securely settle a validated transaction record instance.")
     public ResponseEntity<java.util.Map<String , Object>> settleTrade(@PathVariable Long tradeId, @RequestParam(defaultValue = "1") Long processingUserId){
         java.util.Map<String, Object> response = settlementService.settleTrade(tradeId, processingUserId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{tradeId}/approve")
+    @Operation(summary = "POST Approve Trade")
+    public ResponseEntity<TradeResponseDTO> approveTrade(
+            @PathVariable Long tradeId,
+            @RequestBody java.util.Map<String, Long> payload) {
+        Long checkerUserId = payload.get("approvedBy");
+        if (checkerUserId == null) {
+            throw new IllegalArgumentException("Field 'approvedBy' is mandatory");
+        }
+        TradeResponseDTO response = approvalService.approveTrade(tradeId, checkerUserId);
         return ResponseEntity.ok(response);
     }
 }
