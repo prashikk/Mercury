@@ -63,4 +63,14 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(responseBody, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> handleOptimisticLockingFailure(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+
+        Map<String, Object> responseBody = buildErrorResponseBody(
+                HttpStatus.CONFLICT, // Returns 409 Conflict status code
+                "Trade has already been modified. Please refresh before editing."
+        );
+        return new ResponseEntity<>(responseBody, HttpStatus.CONFLICT);
+    }
 }

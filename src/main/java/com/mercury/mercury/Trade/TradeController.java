@@ -29,11 +29,17 @@ public class TradeController {
     @GetMapping
     @Operation(summary = "filter Trade", description = "filter trade dynamicaly using JPASpecifications.")
     public ResponseEntity<Page<TradeResponseDTO>> searchTrades(
-            @ModelAttribute TradeSearchRequest request, // Binds parameters into the DTO safely
-            Pageable pageable) { // Automatically captures page, size, and sorting directives
+            @ModelAttribute TradeSearchRequest request,
+            Pageable pageable) {
 
         Page<TradeResponseDTO> trades = tradeService.getFilteredTrades(request, pageable);
         return ResponseEntity.ok(trades);
     }
 
+    @PutMapping("/{tradeId}")
+    @Operation(summary = "Update Trade", description = "update trade by tradeId ")
+    public ResponseEntity<TradeResponseDTO> updateTrade(@PathVariable Long tradeId, @Valid @RequestBody TradeUpdateRequestDTO updateDTO ){
+        TradeResponseDTO response = tradeService.updateTrade(tradeId, updateDTO);
+        return ResponseEntity.ok(response);
+    }
 }

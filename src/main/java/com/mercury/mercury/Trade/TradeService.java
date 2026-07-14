@@ -3,7 +3,6 @@ package com.mercury.mercury.Trade;
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.ClientRepo;
 import com.mercury.mercury.Client.Enum.TradeStatus;
-import com.mercury.mercury.Client.Enum.TradeType;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Instruments.InstrumentRepo;
 import jakarta.persistence.EntityNotFoundException;
@@ -14,9 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -80,7 +77,10 @@ public class TradeService {
     public Page<TradeResponseDTO> getFilteredTrades(TradeSearchRequest request, Pageable pageable) {
         log.info("Trade Search start");
         request.validate();
-        log.info("Filter Applied");
+        log.info(
+                "Searching trades with filters: {}",
+                request
+        );
         Specification<TradeEntity> spec = TradeSpecification.getTradeByFilters(request);
         Page<TradeEntity> tradeEntities = tradeRepo.findAll(spec, pageable);
         log.info("Number of Records Returned {} ", tradeEntities.getNumberOfElements());
@@ -88,5 +88,27 @@ public class TradeService {
         log.info("Search completed");
 
         return responsePage;
+    }
+
+    @Transactional
+    public TradeResponseDTO updateTrade(Long tradeId, TradeUpdateRequestDTO updateDTO){
+        log.info("Trade Update Started for tradeId: {}", tradeId);
+        TradeEntity trade = tradeRepo.findById(tradeId).orElseThrow(() -> new EntityNotFoundException("Trade not found with ID " +tradeId));
+        log.info("Trade Found for tradeId: {}", tradeId);
+        try {
+            log.info("Simulating processing delay for tradeId: {}", tradeId);
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error("Thread interrupted during sleep for tradeId: {}", tradeId, e);
+        }
+
+        trade.setQuantity(updateDTO.getQuantity());
+        trade.setPrice(updateDTO.getPrice());
+        trade.setStatus(updateDTO.getStatus());
+
+        TradeEntity updatedTrade = tradeRepo.save(trade);
+        log.info("Trade Updated for tradeId: {}", tradeId);
+        return tradeMapper.toResponseDTO(updatedTrade);
     }
 }
