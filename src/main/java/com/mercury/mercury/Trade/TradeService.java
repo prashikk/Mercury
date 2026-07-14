@@ -3,13 +3,20 @@ package com.mercury.mercury.Trade;
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.ClientRepo;
 import com.mercury.mercury.Client.Enum.TradeStatus;
+import com.mercury.mercury.Client.Enum.TradeType;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Instruments.InstrumentRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -68,5 +75,18 @@ public class TradeService {
 
         log.info("Trade Created");
         return tradeMapper.toResponseDTO(savedDate);
+    }
+
+    public Page<TradeResponseDTO> getFilteredTrades(TradeSearchRequest request, Pageable pageable) {
+        log.info("Trade Search start");
+        request.validate();
+        log.info("Filter Applied");
+        Specification<TradeEntity> spec = TradeSpecification.getTradeByFilters(request);
+        Page<TradeEntity> tradeEntities = tradeRepo.findAll(spec, pageable);
+        log.info("Number of Records Returned {} ", tradeEntities.getNumberOfElements());
+        Page<TradeResponseDTO> responsePage = tradeEntities.map(tradeMapper::toResponseDTO);
+        log.info("Search completed");
+
+        return responsePage;
     }
 }

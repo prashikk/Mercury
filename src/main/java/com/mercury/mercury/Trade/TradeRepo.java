@@ -1,6 +1,10 @@
 package com.mercury.mercury.Trade;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-public interface TradeRepo extends JpaRepository<TradeEntity, Long> {
+@Repository
+public interface TradeRepo extends JpaRepository<TradeEntity, Long>, JpaSpecificationExecutor<TradeEntity> {
+
 }
