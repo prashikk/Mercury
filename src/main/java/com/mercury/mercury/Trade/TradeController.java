@@ -1,5 +1,8 @@
 package com.mercury.mercury.Trade;
 
+import com.mercury.mercury.Trade.dto.*;
+import com.mercury.mercury.Trade.service.TradeLifecycleService;
+import com.mercury.mercury.Trade.service.TradeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Trade Management", description = "End point for Trade Controller")
 public class TradeController {
     private final TradeService tradeService;
+    public final TradeLifecycleService tradeLifecycleService;
 
-    public TradeController(TradeService tradeService){
+    public TradeController(TradeService tradeService, TradeLifecycleService tradeLifecycleService){
         this.tradeService = tradeService;
+        this.tradeLifecycleService = tradeLifecycleService;
     }
 
     @PostMapping
@@ -40,6 +45,13 @@ public class TradeController {
     @Operation(summary = "Update Trade", description = "update trade by tradeId ")
     public ResponseEntity<TradeResponseDTO> updateTrade(@PathVariable Long tradeId, @Valid @RequestBody TradeUpdateRequestDTO updateDTO ){
         TradeResponseDTO response = tradeService.updateTrade(tradeId, updateDTO);
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    @Operation(summary = "Update Trade Status", description = "Drives the trade state machine forward following strict operational settlement rules. ")
+    public ResponseEntity<TradeResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody TradeStatusUpdateRequest payload){
+        TradeResponseDTO response = tradeLifecycleService.TransationStatus(id, payload.getStatus());
         return ResponseEntity.ok(response);
     }
 }

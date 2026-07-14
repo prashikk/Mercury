@@ -1,10 +1,18 @@
-package com.mercury.mercury.Trade;
+package com.mercury.mercury.Trade.service;
 
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.ClientRepo;
 import com.mercury.mercury.Client.Enum.TradeStatus;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Instruments.InstrumentRepo;
+import com.mercury.mercury.Trade.entity.TradeEntity;
+import com.mercury.mercury.Trade.specification.TradeSpecification;
+import com.mercury.mercury.Trade.dto.TradeRequestDTO;
+import com.mercury.mercury.Trade.dto.TradeResponseDTO;
+import com.mercury.mercury.Trade.dto.TradeSearchRequest;
+import com.mercury.mercury.Trade.dto.TradeUpdateRequestDTO;
+import com.mercury.mercury.Trade.mapper.TradeMapper;
+import com.mercury.mercury.Trade.repository.TradeRepo;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;

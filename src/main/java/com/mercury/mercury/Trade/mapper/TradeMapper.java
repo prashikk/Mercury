@@ -1,5 +1,8 @@
-package com.mercury.mercury.Trade;
+package com.mercury.mercury.Trade.mapper;
 
+import com.mercury.mercury.Trade.entity.TradeEntity;
+import com.mercury.mercury.Trade.dto.TradeRequestDTO;
+import com.mercury.mercury.Trade.dto.TradeResponseDTO;
 import org.springframework.stereotype.Component;
 
 @Component

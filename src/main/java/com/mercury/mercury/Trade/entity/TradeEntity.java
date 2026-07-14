@@ -1,4 +1,4 @@
-package com.mercury.mercury.Trade;
+package com.mercury.mercury.Trade.entity;
 
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.Enum.TradeStatus;
@@ -12,7 +12,6 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Entity

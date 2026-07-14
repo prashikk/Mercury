@@ -1,4 +1,4 @@
-package com.mercury.mercury.Trade;
+package com.mercury.mercury.Trade.dto;
 
 import com.mercury.mercury.Client.Enum.TradeStatus;
 import jakarta.validation.constraints.NotNull;

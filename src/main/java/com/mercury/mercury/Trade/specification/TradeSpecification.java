@@ -1,13 +1,10 @@
-package com.mercury.mercury.Trade;
+package com.mercury.mercury.Trade.specification;
 
-import com.mercury.mercury.Client.Enum.TradeStatus;
-import com.mercury.mercury.Client.Enum.TradeType;
-import jakarta.persistence.criteria.CriteriaBuilder;
+import com.mercury.mercury.Trade.dto.TradeSearchRequest;
+import com.mercury.mercury.Trade.entity.TradeEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
