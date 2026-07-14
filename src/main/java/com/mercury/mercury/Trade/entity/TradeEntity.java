@@ -79,4 +79,13 @@ public class TradeEntity {
     @Version
     @Column(name = "version", nullable = false)
     private Integer version;
+
+    @Column(name = "settlement_Reference")
+    private String settlementReference;
+
+    @Column(name = "settled_By")
+    private Long settled_by;
+
+    @Column(name = "settled_At")
+    private LocalDateTime settled_at;
 }

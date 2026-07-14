@@ -73,4 +73,9 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(responseBody, HttpStatus.CONFLICT);
     }
+    @ExceptionHandler(SettlementException.class)
+    public ResponseEntity<Map<String, Object>> handleSettlementException(SettlementException ex) {
+        Map<String, Object> responseBody = buildErrorResponseBody(ex.getHttpStatus(), ex.getMessage());
+        return new ResponseEntity<>(responseBody, ex.getHttpStatus());
+    }
 }

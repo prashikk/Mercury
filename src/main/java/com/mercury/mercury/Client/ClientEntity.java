@@ -1,5 +1,6 @@
 package com.mercury.mercury.Client;
 
+import com.mercury.mercury.Client.Enum.KycStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -31,8 +32,9 @@ public class ClientEntity {
     @Column(name = "country")
     private String country;
 
-    @Column(name = "KYC_status")
-    private String KYC_Status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "KYC_status", nullable = false)
+    private KycStatus kycStatus;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
