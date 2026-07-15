@@ -13,6 +13,7 @@ import com.mercury.mercury.Trade.dto.TradeSearchRequest;
 import com.mercury.mercury.Trade.dto.TradeUpdateRequestDTO;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
 import com.mercury.mercury.Trade.repository.TradeRepo;
+import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -32,12 +33,14 @@ public class TradeService {
     private final ClientRepo clientRepo;
     private final InstrumentRepo instrumentRepo;
     private final TradeMapper tradeMapper;
+    private final NotificationService notificationService;
 
-    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper){
+    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, NotificationService notificationService){
         this.clientRepo = clientRepo;
         this.tradeRepo = tradeRepo;
         this.instrumentRepo = instrumentRepo;
         this.tradeMapper = tradeMapper;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -91,8 +94,8 @@ public class TradeService {
 
 
         TradeEntity savedDate = tradeRepo.save(tradeEntity);
-
         log.info("Trade Created");
+        notificationService.createTradeNotification(savedDate.getCreatedBy() != null ? savedDate.getCreatedBy() : 1L, savedDate.getTrade_id());
         return tradeMapper.toResponseDTO(savedDate);
     }
 

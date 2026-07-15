@@ -6,6 +6,7 @@ import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.ApprovalValidator;
+import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,14 @@ public class ApprovalService {
     private final ApprovalValidator approvalValidator;
     private final TradeLifecycleService tradeLifecycleService;
     private final TradeMapper tradeMapper;
+    private final NotificationService notificationService;
 
-    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, TradeMapper tradeMapper) {
+    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, TradeMapper tradeMapper, NotificationService notificationService) {
         this.tradeRepo = tradeRepo;
         this.approvalValidator = approvalValidator;
         this.tradeLifecycleService = tradeLifecycleService;
         this.tradeMapper = tradeMapper;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -61,6 +64,7 @@ public class ApprovalService {
         response.put("status", "VALIDATED");
         response.put("message", "Trade approved and validated successfully.");
 
+        notificationService.createApprovalNotification(saved.getApprovedBy(), saved.getTrade_id());
         return response;
     }
 

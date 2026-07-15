@@ -5,6 +5,8 @@ import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.SettlementValidator;
+import com.mercury.mercury.notification.service.NotificationService;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +21,19 @@ public class SettlementService {
     private final TradeLifecycleService tradeLifecycleService;
     private final SettlementValidator settlementValidator;
     private final PortfolioService portfolioService;
+    private final NotificationService notificationService;
 
-    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService) {
+    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService, NotificationService notificationService) {
         this.tradeRepo = tradeRepo;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementValidator = settlementValidator;
         this.portfolioService = portfolioService;
+        this.notificationService = notificationService;
     }
 
     private static final AtomicLong SEQUENCE = new AtomicLong(1);
 
+    @Transactional
     public java.util.Map<String, Object> settleTrade(Long tradeId, Long processingUserId){
         log.info("Starting settlement process for trade ID: {}", tradeId);
 
@@ -37,8 +42,6 @@ public class SettlementService {
 
         settlementValidator.validateSettlement(trade);
         tradeLifecycleService.transationStatus(tradeId, TradeStatus.SETTLED);
-
-        portfolioService.updatePortfolioPosition(trade);
 
         String settlementReference = generateSettlementReference();
 
@@ -49,15 +52,21 @@ public class SettlementService {
 
         log.info("Settlement process completed for trade ID: {}. Settlement Reference: {}", tradeId, settlementReference);
 
+        portfolioService.updatePortfolioPosition(trade);
+
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("tradeId", tradeId);
         response.put("settlementReference", settlementReference);
         response.put("settledDate", trade.getSettled_date());
+
+        notificationService.createSettlementNotification(processingUserId, tradeId, settlementReference);
         return response;
     }
 
-    public String generateSettlementReference(){
-        String dateToken = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return String.format("SET-%s-%06d", dateToken, SEQUENCE.getAndIncrement());
+    public String generateSettlementReference() {
+        String dateToken = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        long uniqueTimeToken = System.currentTimeMillis() % 1000000;
+        return String.format("SET-%s-%06d", dateToken, uniqueTimeToken);
     }
 }

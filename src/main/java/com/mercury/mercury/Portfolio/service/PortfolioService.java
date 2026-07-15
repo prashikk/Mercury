@@ -6,6 +6,7 @@ import com.mercury.mercury.Portfolio.repository.PortfolioRepo;
 import com.mercury.mercury.Portfolio.validation.PortfolioValidator;
 import com.mercury.mercury.Trade.Enum.TradeType;
 import com.mercury.mercury.Trade.entity.TradeEntity;
+import com.mercury.mercury.notification.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -18,10 +19,12 @@ import java.time.LocalDateTime;
 public class PortfolioService {
     private final PortfolioRepo portfolioRepo;
     private final PortfolioValidator portfolioValidator;
+    private final NotificationService notificationService;
 
-    public PortfolioService(PortfolioRepo portfolioRepo, PortfolioValidator portfolioValidator) {
+    public PortfolioService(PortfolioRepo portfolioRepo, PortfolioValidator portfolioValidator, NotificationService notificationService) {
         this.portfolioRepo = portfolioRepo;
         this.portfolioValidator = portfolioValidator;
+        this.notificationService = notificationService;
     }
 
     public void updatePortfolioPosition(TradeEntity trade){
@@ -67,6 +70,6 @@ public class PortfolioService {
         portfolio.setLastUpdated(LocalDateTime.now());
         portfolioRepo.save(portfolio);
         log.info("Portfolio Updated");
-
+        notificationService.createPortfolioNotification(trade.getClient_id().getClientID(), trade.getTrade_id(), portfolio.getQuantity());
     }
 }
