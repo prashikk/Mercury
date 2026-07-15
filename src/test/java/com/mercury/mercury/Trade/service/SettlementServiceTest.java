@@ -3,7 +3,7 @@ package com.mercury.mercury.Trade.service;
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.Enum.KycStatus;
 import com.mercury.mercury.Trade.Enum.TradeStatus;
-import com.mercury.mercury.Common.SettlementException;
+import com.mercury.mercury.Common.BusinessValidationException;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
@@ -69,7 +69,7 @@ class SettlementServiceTest {
         when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
 
         // Act & Assert
-        SettlementException ex = assertThrows(SettlementException.class, () ->
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
                 settlementService.settleTrade(101L, 1L)
         );
         assertEquals(HttpStatus.CONFLICT, ex.getHttpStatus());
@@ -87,7 +87,7 @@ class SettlementServiceTest {
         when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
 
         // Act & Assert
-        SettlementException ex = assertThrows(SettlementException.class, () ->
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
                 settlementService.settleTrade(101L, 1L)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());
@@ -104,7 +104,7 @@ class SettlementServiceTest {
         when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
 
         // Act & Assert
-        SettlementException ex = assertThrows(SettlementException.class, () ->
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
                 settlementService.settleTrade(101L, 1L)
         );
         assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());

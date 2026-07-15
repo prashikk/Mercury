@@ -73,9 +73,16 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(responseBody, HttpStatus.CONFLICT);
     }
-    @ExceptionHandler(SettlementException.class)
-    public ResponseEntity<Map<String, Object>> handleSettlementException(SettlementException ex) {
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<Map<String, Object>> handleSettlementException(BusinessValidationException ex) {
         Map<String, Object> responseBody = buildErrorResponseBody(ex.getHttpStatus(), ex.getMessage());
         return new ResponseEntity<>(responseBody, ex.getHttpStatus());
     }
+
+    @ExceptionHandler(com.mercury.mercury.Portfolio.exception.InsufficientHoldingsException.class)
+    public ResponseEntity<Map<String, Object>> handleInsufficientHoldings(com.mercury.mercury.Portfolio.exception.InsufficientHoldingsException ex) {
+        Map<String, Object> responseBody = buildErrorResponseBody(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return new ResponseEntity<>(responseBody, HttpStatus.BAD_REQUEST);
+    }
+
 }

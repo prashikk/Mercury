@@ -26,7 +26,6 @@ public class TradeStateValidator {
 
         ALLOWED_TRANSITIONS.put(TradeStatus.APPROVED, Set.of(
                 TradeStatus.VALIDATED,
-                TradeStatus.SETTLED,
                 TradeStatus.FAILED
         ));
 

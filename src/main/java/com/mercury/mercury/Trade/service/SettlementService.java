@@ -1,5 +1,6 @@
 package com.mercury.mercury.Trade.service;
 
+import com.mercury.mercury.Portfolio.service.PortfolioService;
 import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
@@ -17,11 +18,13 @@ public class SettlementService {
     private final TradeRepo tradeRepo;
     private final TradeLifecycleService tradeLifecycleService;
     private final SettlementValidator settlementValidator;
+    private final PortfolioService portfolioService;
 
-    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator) {
+    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService) {
         this.tradeRepo = tradeRepo;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementValidator = settlementValidator;
+        this.portfolioService = portfolioService;
     }
 
     private static final AtomicLong SEQUENCE = new AtomicLong(1);
@@ -34,6 +37,9 @@ public class SettlementService {
 
         settlementValidator.validateSettlement(trade);
         tradeLifecycleService.transationStatus(tradeId, TradeStatus.SETTLED);
+
+        portfolioService.updatePortfolioPosition(trade);
+
         String settlementReference = generateSettlementReference();
 
         trade.setSettlementReference(settlementReference);

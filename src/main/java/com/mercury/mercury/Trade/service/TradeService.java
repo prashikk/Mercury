@@ -71,6 +71,7 @@ public class TradeService {
 
         tradeEntity.setClient_id(client);
         tradeEntity.setInstrument_id(instrument);
+        tradeEntity.setCreatedBy(1L); //Hard coded
         tradeEntity.setStatus(TradeStatus.NEW);
         LocalDateTime now = LocalDateTime.now();
         tradeEntity.setTrade_date(now);

@@ -70,14 +70,11 @@ public class TradeController {
 
     @PostMapping("/{tradeId}/approve")
     @Operation(summary = "POST Approve Trade")
-    public ResponseEntity<TradeResponseDTO> approveTrade(
+    public ResponseEntity<java.util.Map<String, Object>> approveTrade(
             @PathVariable Long tradeId,
-            @RequestBody java.util.Map<String, Long> payload) {
-        Long checkerUserId = payload.get("approvedBy");
-        if (checkerUserId == null) {
-            throw new IllegalArgumentException("Field 'approvedBy' is mandatory");
-        }
-        TradeResponseDTO response = approvalService.approveTrade(tradeId, checkerUserId);
+            @jakarta.validation.Valid @RequestBody com.mercury.mercury.Trade.dto.ApprovalRequestDTO request) {
+        java.util.Map<String, Object> response = approvalService.approveTrade(tradeId, request.getApprovedBy());
+
         return ResponseEntity.ok(response);
     }
 }

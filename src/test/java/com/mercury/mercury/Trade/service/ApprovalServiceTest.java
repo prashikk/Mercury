@@ -2,9 +2,8 @@ package com.mercury.mercury.Trade.service;
 
 import com.mercury.mercury.Client.ClientEntity;
 import com.mercury.mercury.Client.Enum.KycStatus;
-import com.mercury.mercury.Common.SettlementException;
+import com.mercury.mercury.Common.BusinessValidationException;
 import com.mercury.mercury.Instruments.InstrumentEntity;
-import com.mercury.mercury.Trade.*;
 import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.dto.TradeResponseDTO;
 import com.mercury.mercury.Trade.entity.TradeEntity;
@@ -71,7 +70,7 @@ class ApprovalServiceTest {
         when(tradeRepo.save(any(TradeEntity.class))).thenReturn(trade);
         when(tradeMapper.toResponseDTO(any(TradeEntity.class))).thenReturn(expectedDto);
 
-        TradeResponseDTO result = approvalService.approveTrade(tradeId, checkerUserId);
+        TradeResponseDTO result = (TradeResponseDTO) approvalService.approveTrade(tradeId, checkerUserId);
 
         assertNotNull(result);
         verify(approvalValidator, times(1)).validateApproval(trade, checkerUserId);
@@ -92,7 +91,7 @@ class ApprovalServiceTest {
 
         when(tradeRepo.findById(tradeId)).thenReturn(Optional.of(trade));
 
-        SettlementException ex = assertThrows(SettlementException.class, () ->
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
                 approvalService.approveTrade(tradeId, checkerUserId)
         );
 
@@ -113,7 +112,7 @@ class ApprovalServiceTest {
 
         when(tradeRepo.findById(tradeId)).thenReturn(Optional.of(trade));
 
-        SettlementException ex = assertThrows(SettlementException.class, () ->
+        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
                 approvalService.approveTrade(tradeId, checkerUserId)
         );
 

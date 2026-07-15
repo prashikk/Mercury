@@ -5,6 +5,7 @@ import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.Enum.TradeType;
 import com.mercury.mercury.Instruments.InstrumentEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

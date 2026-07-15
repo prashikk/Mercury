@@ -29,7 +29,7 @@ public class ApprovalService {
     }
 
     @Transactional
-    public TradeResponseDTO approveTrade(Long tradeId, Long checkerUserId){
+    public java.util.Map<String, Object> approveTrade(Long tradeId, Long checkerUserId){
         log.info("Approval process started for trade ID: {}", tradeId);
 
         TradeEntity trade = tradeRepo.findById(tradeId)
@@ -40,10 +40,10 @@ public class ApprovalService {
         log.info("makerUserId: {}", trade.getCreatedBy());
         log.info("checkerUserId: {}", checkerUserId);
 
-        try{
+        try {
             approvalValidator.validateApproval(trade, checkerUserId);
             log.info("Approval Granted");
-        }catch (Exception e){
+        } catch (Exception e) {
             log.error("Approval Failed: {}", e.getMessage());
             throw e;
         }
@@ -56,7 +56,12 @@ public class ApprovalService {
 
         TradeEntity saved = tradeRepo.save(trade);
         log.info("Trade approved and validated successfully for trade ID: {}", tradeId);
-        return tradeMapper.toResponseDTO(saved);
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("tradeId", saved.getTrade_id());
+        response.put("status", "VALIDATED");
+        response.put("message", "Trade approved and validated successfully.");
 
+        return response;
     }
+
 }
