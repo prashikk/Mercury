@@ -81,7 +81,7 @@ public class TradeService {
         tradeEntity.setSettled_date(now.plusDays(2));
 
         BigDecimal totalValue = requestDTO.getPrice().multiply(BigDecimal.valueOf(requestDTO.getQuantity()));
-        BigDecimal Threshold = BigDecimal.valueOf(1000000);
+        BigDecimal Threshold = BigDecimal.valueOf(100000000);
 
         if(totalValue.compareTo(Threshold) > 0){
             tradeEntity.setStatus(TradeStatus.PENDING_APPROVAL);
