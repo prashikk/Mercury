@@ -8,10 +8,13 @@ import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.ApprovalValidator;
 import com.mercury.mercury.User.entity.UserEntity;
 import com.mercury.mercury.User.repository.UserRepository;
+import com.mercury.mercury.User.service.AuthenticatedUserService;
+import com.mercury.mercury.event.TradeApprovedEvent;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.User;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,42 +26,41 @@ public class ApprovalService {
     private final TradeRepo tradeRepo;
     private final ApprovalValidator approvalValidator;
     private final TradeLifecycleService tradeLifecycleService;
-    private final TradeMapper tradeMapper;
-    private final NotificationService notificationService;
+    private final AuthenticatedUserService authenticatedUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    private final UserRepository userRepository;
 
-    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, TradeMapper tradeMapper, NotificationService notificationService, UserRepository userRepository) {
+    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher) {
         this.tradeRepo = tradeRepo;
         this.approvalValidator = approvalValidator;
         this.tradeLifecycleService = tradeLifecycleService;
-        this.tradeMapper = tradeMapper;
-        this.notificationService = notificationService;
-        this.userRepository = userRepository;
+        this.authenticatedUserService = authenticatedUserService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
-    public java.util.Map<String, Object> approveTrade(Long tradeId, String managerUsername){
-        log.info("Approval process started for trade ID: {} by manager: {}", tradeId, managerUsername);
+    public java.util.Map<String, Object> approveTrade(Long tradeId){
+        String managerUsername = authenticatedUserService.getCurrentUsername();
+        Long checkerUserId = authenticatedUserService.getCurrentUserId();
 
-        UserEntity manager = userRepository.findByUsername(managerUsername)
-                .orElseThrow(() -> new RuntimeException("Authenticated manager not found in records: " + managerUsername));
-
-        Long checkerUserId = manager.getUserId();
+        log.info("User '{}' initiated approval validation process for trade ID: {}", managerUsername, tradeId);
 
         TradeEntity trade = tradeRepo.findById(tradeId)
                 .orElseThrow(() -> new RuntimeException("Trade not found with ID: " + tradeId));
 
         BigDecimal tradeValue = trade.getPrice().multiply(BigDecimal.valueOf(trade.getQuantity()));
+        log.info("Trade processing values -> Calculated Value: {}, Maker User ID: {}, Checker User ID: {}",
+                tradeValue, trade.getCreatedBy(), checkerUserId);
+
         log.info("Trade value calculated: {}", tradeValue);
         log.info("Trader UserId: {}", trade.getCreatedBy());
         log.info("checkerUserId: {}", checkerUserId);
 
         try {
             approvalValidator.validateApproval(trade, checkerUserId);
-            log.info("Approval Granted");
+            log.info("Checker rule evaluation succeeded for Trade ID: {}", tradeId);
         } catch (Exception e) {
-            log.error("Approval Failed: {}", e.getMessage());
+            log.error("Approval failed for trade ID: {}. Reject Reason: {}", tradeId, e.getMessage());
             throw e;
         }
 
@@ -69,13 +71,14 @@ public class ApprovalService {
         trade.setApprovedAt(LocalDateTime.now());
 
         TradeEntity saved = tradeRepo.save(trade);
-        log.info("Trade approved and validated successfully for trade ID: {}", tradeId);
+        log.info("User '{}' successfully approved and validated Trade ID: {}", managerUsername, tradeId);
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("tradeId", saved.getTrade_id());
         response.put("status", "VALIDATED");
         response.put("message", "Trade approved and validated successfully.");
 
-        notificationService.createApprovalNotification(saved.getApprovedBy(), saved.getTrade_id());
+        log.info("Publishing TradeApprovedEvent for Trade ID: {}", tradeId);
+        eventPublisher.publishEvent(new TradeApprovedEvent(tradeId, authenticatedUserService.getCurrentUserId(), LocalDateTime.now()));
         return response;
     }
 

@@ -7,11 +7,14 @@ import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.SettlementValidator;
 import com.mercury.mercury.User.entity.UserEntity;
 import com.mercury.mercury.User.repository.UserRepository;
+import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.User;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import com.mercury.mercury.event.TradeSettledEvent;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -26,26 +29,28 @@ public class SettlementService {
     private final PortfolioService portfolioService;
     private final NotificationService notificationService;
     private final UserRepository userRepository;
+    private final AuthenticatedUserService authenticatedUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService, NotificationService notificationService, UserRepository userRepository) {
+    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService, NotificationService notificationService, UserRepository userRepository, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher) {
         this.tradeRepo = tradeRepo;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementValidator = settlementValidator;
         this.portfolioService = portfolioService;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
+        this.authenticatedUserService = authenticatedUserService;
+        this.eventPublisher = eventPublisher;
     }
 
     private static final AtomicLong SEQUENCE = new AtomicLong(1);
 
     @Transactional
-    public java.util.Map<String, Object> settleTrade(Long tradeId, String operationsUsername){
-        log.info("Starting settlement process for trade ID: {} by user: {}", tradeId, operationsUsername);
+    public java.util.Map<String, Object> settleTrade(Long tradeId){
+        String operationsUsername = authenticatedUserService.getCurrentUsername();
+        Long processingUserId = authenticatedUserService.getCurrentUserId();
 
-        UserEntity operationsUser = userRepository.findByUsername(operationsUsername)
-                .orElseThrow(() -> new RuntimeException("Authenticated operations user not found in records: " + operationsUsername));
-
-        Long processingUserId = operationsUser.getUserId();
+        log.info("User '{}' initiated settlement clearing pipeline execution for Trade ID: {}", operationsUsername, tradeId);
 
         TradeEntity trade = tradeRepo.findById(tradeId)
                 .orElseThrow(() -> new RuntimeException("Trade not found with ID: " + tradeId));
@@ -61,16 +66,16 @@ public class SettlementService {
         trade.setSettled_date(now);
         tradeRepo.save(trade);
 
-        log.info("Settlement process completed for trade ID: {}. Settlement Reference: {}", tradeId, settlementReference);
+        log.info("Clearing operations completed for Trade ID: {}. Assigned Ref: '{}' under context of user '{}'",
+                tradeId, settlementReference, operationsUsername);
 
-        portfolioService.updatePortfolioPosition(trade);
+        log.info("Publishing TradeSettledEvent | Trade ID {}", tradeId);
+        eventPublisher.publishEvent(new TradeSettledEvent(tradeId, settlementReference, LocalDateTime.now()));
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("tradeId", tradeId);
         response.put("settlementReference", settlementReference);
         response.put("settledDate", trade.getSettled_date());
-
-        notificationService.createSettlementNotification(processingUserId, tradeId, settlementReference);
         return response;
     }
 

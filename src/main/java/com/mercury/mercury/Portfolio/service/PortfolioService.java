@@ -70,6 +70,6 @@ public class PortfolioService {
         portfolio.setLastUpdated(LocalDateTime.now());
         portfolioRepo.save(portfolio);
         log.info("Portfolio Updated");
-        notificationService.createPortfolioNotification(trade.getClient_id().getClientID(), trade.getTrade_id(), portfolio.getQuantity());
+        notificationService.createPortfolioNotification(trade.getTrade_id(), portfolio.getQuantity());
     }
 }

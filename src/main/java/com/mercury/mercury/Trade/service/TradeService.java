@@ -13,11 +13,14 @@ import com.mercury.mercury.Trade.dto.TradeSearchRequest;
 import com.mercury.mercury.Trade.dto.TradeUpdateRequestDTO;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
 import com.mercury.mercury.Trade.repository.TradeRepo;
+import com.mercury.mercury.User.service.AuthenticatedUserService;
+import com.mercury.mercury.event.TradeCreatedEvent;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -33,20 +36,26 @@ public class TradeService {
     private final ClientRepo clientRepo;
     private final InstrumentRepo instrumentRepo;
     private final TradeMapper tradeMapper;
-    private final NotificationService notificationService;
+    private final AuthenticatedUserService authenticatedUserService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, NotificationService notificationService){
+    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher){
         this.clientRepo = clientRepo;
         this.tradeRepo = tradeRepo;
         this.instrumentRepo = instrumentRepo;
         this.tradeMapper = tradeMapper;
-        this.notificationService = notificationService;
+        this.authenticatedUserService = authenticatedUserService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
     public TradeResponseDTO executeTrade(TradeRequestDTO requestDTO){
 
-        log.info("Trade Creation Started");
+        String currentActor = authenticatedUserService.getCurrentUsername();
+        Long actorId = authenticatedUserService.getCurrentUserId();
+
+        log.info("User '{}' initiated trade creation pipeline execution.", currentActor);
+
         ClientEntity client;
         try {
             client = clientRepo.findById(requestDTO.getClientId())
@@ -74,66 +83,56 @@ public class TradeService {
 
         tradeEntity.setClient_id(client);
         tradeEntity.setInstrument_id(instrument);
-        tradeEntity.setCreatedBy(1L); //Hard coded
+        tradeEntity.setCreatedBy(actorId);
         tradeEntity.setStatus(TradeStatus.NEW);
         LocalDateTime now = LocalDateTime.now();
         tradeEntity.setTrade_date(now);
         tradeEntity.setSettled_date(now.plusDays(2));
 
         BigDecimal totalValue = requestDTO.getPrice().multiply(BigDecimal.valueOf(requestDTO.getQuantity()));
-        BigDecimal Threshold = BigDecimal.valueOf(100000000);
+        BigDecimal threshold = BigDecimal.valueOf(100000000); //10cr is the limit
 
-        if(totalValue.compareTo(Threshold) > 0){
+        if(totalValue.compareTo(threshold) > 0){
             tradeEntity.setStatus(TradeStatus.PENDING_APPROVAL);
-            log.info("High value trade detected. Trade status set to PENDING_APPROVAL.", totalValue);
-        }
+            log.info("High value trade calculated: {} > threshold {}. Routing trade status to PENDING_APPROVAL.", totalValue, threshold);        }
         else{
             tradeEntity.setStatus(TradeStatus.VALIDATED);
-            log.info("Trade status set to VALIDATED.", totalValue);
+            log.info("Trade value calculated: {} <= threshold {}. Automatically promoting status to VALIDATED.", totalValue, threshold);
         }
 
 
-        TradeEntity savedDate = tradeRepo.save(tradeEntity);
-        log.info("Trade Created");
-        notificationService.createTradeNotification(savedDate.getCreatedBy() != null ? savedDate.getCreatedBy() : 1L, savedDate.getTrade_id());
-        return tradeMapper.toResponseDTO(savedDate);
+        TradeEntity savedTrade = tradeRepo.save(tradeEntity);
+
+        log.info("Publishing TradeCreatedEvent | Trade ID {}", savedTrade.getTrade_id());
+
+        eventPublisher.publishEvent(new TradeCreatedEvent(savedTrade.getTrade_id(), actorId, LocalDateTime.now()));
+
+        return tradeMapper.toResponseDTO(savedTrade);
     }
 
     public Page<TradeResponseDTO> getFilteredTrades(TradeSearchRequest request, Pageable pageable) {
-        log.info("Trade Search start");
+        log.info("Filter queries triggered by User '{}'", authenticatedUserService.getCurrentUsername());
         request.validate();
-        log.info(
-                "Searching trades with filters: {}",
-                request
-        );
         Specification<TradeEntity> spec = TradeSpecification.getTradeByFilters(request);
         Page<TradeEntity> tradeEntities = tradeRepo.findAll(spec, pageable);
-        log.info("Number of Records Returned {} ", tradeEntities.getNumberOfElements());
-        Page<TradeResponseDTO> responsePage = tradeEntities.map(tradeMapper::toResponseDTO);
-        log.info("Search completed");
-
-        return responsePage;
+        return tradeEntities.map(tradeMapper::toResponseDTO);
     }
 
     @Transactional
     public TradeResponseDTO updateTrade(Long tradeId, TradeUpdateRequestDTO updateDTO){
-        log.info("Trade Update Started for tradeId: {}", tradeId);
+        String currentActor = authenticatedUserService.getCurrentUsername();
+        Long actorId = authenticatedUserService.getCurrentUserId();
+
+        log.info("User '{}' started update transaction on Trade ID: {}", currentActor, tradeId);
+
         TradeEntity trade = tradeRepo.findById(tradeId).orElseThrow(() -> new EntityNotFoundException("Trade not found with ID " +tradeId));
-        log.info("Trade Found for tradeId: {}", tradeId);
-        try {
-            log.info("Simulating processing delay for tradeId: {}", tradeId);
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("Thread interrupted during sleep for tradeId: {}", tradeId, e);
-        }
 
         trade.setQuantity(updateDTO.getQuantity());
         trade.setPrice(updateDTO.getPrice());
         trade.setStatus(updateDTO.getStatus());
 
         TradeEntity updatedTrade = tradeRepo.save(trade);
-        log.info("Trade Updated for tradeId: {}", tradeId);
+        log.info("User '{}' successfully committed updates to Trade ID: {}", currentActor, tradeId);
         return tradeMapper.toResponseDTO(updatedTrade);
     }
 }

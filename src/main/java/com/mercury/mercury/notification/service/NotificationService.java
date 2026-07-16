@@ -1,5 +1,6 @@
 package com.mercury.mercury.notification.service;
 
+import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.notification.domain.Enum.NotificationStatus;
 import com.mercury.mercury.notification.domain.Enum.NotificationType;
 import com.mercury.mercury.notification.domain.NotificationEntity;
@@ -18,9 +19,11 @@ import java.time.LocalDateTime;
 @Transactional
 public class NotificationService {
     private final NotificationRepository notificationRepository;
+    private final AuthenticatedUserService authenticatedUserService;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(NotificationRepository notificationRepository, AuthenticatedUserService authenticatedUserService) {
         this.notificationRepository = notificationRepository;
+        this.authenticatedUserService = authenticatedUserService;
     }
 
     private void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
@@ -45,28 +48,51 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createTradeNotification(Long userId, Long tradeId) {
+    public void createTradeNotification(Long tradeId) {
+        Long userId = authenticatedUserService.getCurrentUserId();
+        String username = authenticatedUserService.getCurrentUsername();
+
+        log.info("System notification dispatched to User '{}' (ID: {}) confirming trade execution for Record ID: {}",
+                username, userId, tradeId);
+
         saveNotification(userId, tradeId, NotificationType.TRADE_CREATED,
                 "Trade Created Successfully",
                 "A new trade transaction with ID " + tradeId + " has been recorded.");
     }
 
     @Transactional
-    public void createApprovalNotification(Long userId, Long tradeId) {
+    public void createApprovalNotification(Long tradeId) {
+        Long userId = authenticatedUserService.getCurrentUserId();
+        String username = authenticatedUserService.getCurrentUsername();
+
+        log.info("System notification dispatched to User '{}' (ID: {}) confirming successful approval validation of Trade ID: {}",
+                username, userId, tradeId);
+
         saveNotification(userId, tradeId, NotificationType.TRADE_APPROVED,
                 "Trade Approved",
                 "Trade transaction with ID " + tradeId + " has been approved by compliance.");
     }
 
     @Transactional
-    public void createSettlementNotification(Long userId, Long tradeId, String settlementRef) {
+    public void createSettlementNotification(Long tradeId, String settlementRef) {
+        Long userId = authenticatedUserService.getCurrentUserId();
+        String username = authenticatedUserService.getCurrentUsername();
+
+        log.info("System notification dispatched to User '{}' (ID: {}) for Trade ID: {} with settlement reference: {}",
+                username, userId, tradeId, settlementRef);
         saveNotification(userId, tradeId, NotificationType.TRADE_SETTLED,
                 "Trade Settled",
                 "Trade with ID " + tradeId + " has settled successfully. Settlement Reference: " + settlementRef);
     }
 
     @Transactional
-    public void createPortfolioNotification(Long userId, Long tradeId, Long currentQuantity) {
+    public void createPortfolioNotification(Long tradeId, Long currentQuantity) {
+        Long userId = authenticatedUserService.getCurrentUserId();
+        String username = authenticatedUserService.getCurrentUsername();
+
+        log.info("System notification dispatched to User '{}' (ID: {}) for Trade ID: {} with Portfolio with Quantity: {}",
+                username, userId, tradeId, currentQuantity);
+
         saveNotification(userId, tradeId, NotificationType.PORTFOLIO_UPDATED,
                 "Portfolio Updated",
                 "Your asset holdings position has been updated. Current Quantity: " + currentQuantity);

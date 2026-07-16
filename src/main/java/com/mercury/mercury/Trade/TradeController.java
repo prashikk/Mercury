@@ -68,11 +68,8 @@ public class TradeController {
     @PreAuthorize("hasRole('OPERATIONS') or hasRole('ADMIN')")
     @Operation(summary = "POST Settle Trade", description = "Executes automated back-office clearing pipeline actions to securely settle a validated transaction record instance.")
     public ResponseEntity<java.util.Map<String, Object>> settleTrade(
-            @PathVariable Long tradeId,
-            Authentication authentication) {
-        String operationsUsername = authentication.getName();
-
-        java.util.Map<String, Object> response = settlementService.settleTrade(tradeId, operationsUsername);
+            @PathVariable Long tradeId) {
+        java.util.Map<String, Object> response = settlementService.settleTrade(tradeId);
         return ResponseEntity.ok(response);
     }
 
@@ -80,12 +77,8 @@ public class TradeController {
     @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @Operation(summary = "POST Approve Trade")
     public ResponseEntity<java.util.Map<String, Object>> approveTrade(
-            @PathVariable Long tradeId,
-            Authentication authentication) {
-
-        String managerUsername = authentication.getName();
-        java.util.Map<String, Object> response = approvalService.approveTrade(tradeId, managerUsername);
-
+            @PathVariable Long tradeId) {
+        java.util.Map<String, Object> response = approvalService.approveTrade(tradeId);
         return ResponseEntity.ok(response);
     }
 }

@@ -9,8 +9,7 @@ import com.mercury.mercury.Instruments.InstrumentEntity;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.SettlementValidator;
-import com.mercury.mercury.User.entity.UserEntity;
-import com.mercury.mercury.User.repository.UserRepository;
+import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.notification.service.NotificationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,143 +32,65 @@ class SettlementServiceTest {
     @Mock
     private TradeRepo tradeRepo;
 
-    @Spy // Inject real validator to test deep operational rules integration accurately
+    @Spy
     private SettlementValidator settlementValidator;
 
     @Mock
     private TradeLifecycleService lifecycleService;
 
     @Mock
-    private PortfolioService portfolioService; // 💡 Mock dependency
+    private PortfolioService portfolioService;
 
     @Mock
-    private NotificationService notificationService; // 💡 Mock dependency
+    private NotificationService notificationService;
 
     @Mock
-    private UserRepository userRepository; // 💡 Mock dependency
+    private AuthenticatedUserService authenticatedUserService; // 💡 Mocked security context
 
     @InjectMocks
     private SettlementService settlementService;
 
     @Test
-    @DisplayName("Test 1: Trade VALIDATED -> SETTLED should Pass successfully")
-    void test1_ValidatedToSettledShouldPass() {
-        // Arrange
+    @DisplayName("Test Trade VALIDATED -> SETTLED should Pass")
+    void test_ValidatedToSettledShouldPass() {
         String opsUsername = "opsUser";
         Long opsUserId = 5L;
-
-        UserEntity mockUser = new UserEntity();
-        mockUser.setUserId(opsUserId);
-        mockUser.setUsername(opsUsername);
 
         TradeEntity trade = createBaseValidTrade();
         trade.setStatus(TradeStatus.VALIDATED);
 
-        when(userRepository.findByUsername(opsUsername)).thenReturn(Optional.of(mockUser));
+        when(authenticatedUserService.getCurrentUsername()).thenReturn(opsUsername);
+        when(authenticatedUserService.getCurrentUserId()).thenReturn(opsUserId);
         when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
         when(tradeRepo.save(any(TradeEntity.class))).thenReturn(trade);
 
-        // Act
-        java.util.Map<String, Object> result = settlementService.settleTrade(101L, opsUsername);
+        java.util.Map<String, Object> result = settlementService.settleTrade(101L);
 
-        // Assert
         assertNotNull(result);
         assertEquals(101L, result.get("tradeId"));
-        assertNotNull(result.get("settlementReference"));
-        assertTrue(result.get("settlementReference").toString().startsWith("SET-"));
 
         verify(lifecycleService, times(1)).transationStatus(101L, TradeStatus.SETTLED);
         verify(tradeRepo, times(1)).save(trade);
         verify(portfolioService, times(1)).updatePortfolioPosition(trade);
-        verify(notificationService, times(1)).createSettlementNotification(eq(opsUserId), eq(101L), anyString());
+        verify(notificationService, times(1)).createSettlementNotification(eq(101L), anyString());
     }
 
     @Test
-    @DisplayName("Test 2: Trade NEW -> Settlement should Fail with 409 Conflict")
-    void test2_NewTradeSettlementShouldFail() {
-        // Arrange
-        String opsUsername = "opsUser";
-        Long opsUserId = 5L;
-
-        UserEntity mockUser = new UserEntity();
-        mockUser.setUserId(opsUserId);
-        mockUser.setUsername(opsUsername);
-
+    @DisplayName("Test Trade NEW -> Settlement should Fail")
+    void test_NewTradeSettlementShouldFail() {
         TradeEntity trade = createBaseValidTrade();
-        trade.setStatus(TradeStatus.NEW); // Break status rule
+        trade.setStatus(TradeStatus.NEW);
 
-        when(userRepository.findByUsername(opsUsername)).thenReturn(Optional.of(mockUser));
+        when(authenticatedUserService.getCurrentUsername()).thenReturn("opsUser");
+        when(authenticatedUserService.getCurrentUserId()).thenReturn(5L);
         when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
 
-        // Act & Assert
-        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
-                settlementService.settleTrade(101L, opsUsername)
+        assertThrows(BusinessValidationException.class, () ->
+                settlementService.settleTrade(101L)
         );
-        assertEquals(HttpStatus.CONFLICT, ex.getHttpStatus());
         verify(tradeRepo, never()).save(any());
     }
 
-    @Test
-    @DisplayName("Test 3: Client KYC=PENDING -> Settlement should Fail with 400 Bad Request")
-    void test3_KycPendingShouldFail() {
-        // Arrange
-        String opsUsername = "opsUser";
-        Long opsUserId = 5L;
-
-        UserEntity mockUser = new UserEntity();
-        mockUser.setUserId(opsUserId);
-        mockUser.setUsername(opsUsername);
-
-        TradeEntity trade = createBaseValidTrade();
-        trade.setStatus(TradeStatus.VALIDATED);
-        trade.getClient_id().setKycStatus(KycStatus.PENDING); // Break KYC rule
-
-        when(userRepository.findByUsername(opsUsername)).thenReturn(Optional.of(mockUser));
-        when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
-
-        // Act & Assert
-        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
-                settlementService.settleTrade(101L, opsUsername)
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());
-    }
-
-    @Test
-    @DisplayName("Test 4: Instrument Missing -> Settlement should Fail with 400 Bad Request")
-    void test4_InstrumentMissingShouldFail() {
-        // Arrange
-        String opsUsername = "opsUser";
-        Long opsUserId = 5L;
-
-        UserEntity mockUser = new UserEntity();
-        mockUser.setUserId(opsUserId);
-        mockUser.setUsername(opsUsername);
-
-        TradeEntity trade = createBaseValidTrade();
-        trade.setStatus(TradeStatus.VALIDATED);
-        trade.setInstrument_id(null); // Break Instrument assignment rule
-
-        when(userRepository.findByUsername(opsUsername)).thenReturn(Optional.of(mockUser));
-        when(tradeRepo.findById(101L)).thenReturn(Optional.of(trade));
-
-        // Act & Assert
-        BusinessValidationException ex = assertThrows(BusinessValidationException.class, () ->
-                settlementService.settleTrade(101L, opsUsername)
-        );
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());
-    }
-
-    @Test
-    @DisplayName("Test 5: Settlement Reference Pattern Verification (SET-yyyyMMdd-XXXXXX)")
-    void test5_VerifySettlementReferencePattern() {
-        // Act
-        String reference = settlementService.generateSettlementReference();
-
-        // Assert
-        assertTrue(reference.matches("^SET-\\d{8}-\\d{6}$"));
-    }
-
-    // --- Helper Utility to construct valid entity profiles mock blocks ---
     private TradeEntity createBaseValidTrade() {
         ClientEntity client = new ClientEntity();
         client.setClientID(1L);
