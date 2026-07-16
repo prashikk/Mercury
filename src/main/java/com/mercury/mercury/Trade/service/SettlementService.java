@@ -8,6 +8,7 @@ import com.mercury.mercury.Trade.specification.SettlementValidator;
 import com.mercury.mercury.User.entity.UserEntity;
 import com.mercury.mercury.User.repository.UserRepository;
 import com.mercury.mercury.User.service.AuthenticatedUserService;
+import com.mercury.mercury.event.publisher.TradeEventPublisher;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -26,21 +27,15 @@ public class SettlementService {
     private final TradeRepo tradeRepo;
     private final TradeLifecycleService tradeLifecycleService;
     private final SettlementValidator settlementValidator;
-    private final PortfolioService portfolioService;
-    private final NotificationService notificationService;
-    private final UserRepository userRepository;
     private final AuthenticatedUserService authenticatedUserService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final TradeEventPublisher tradeEventPublisher;
 
-    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, PortfolioService portfolioService, NotificationService notificationService, UserRepository userRepository, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher) {
+    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher) {
         this.tradeRepo = tradeRepo;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementValidator = settlementValidator;
-        this.portfolioService = portfolioService;
-        this.notificationService = notificationService;
-        this.userRepository = userRepository;
         this.authenticatedUserService = authenticatedUserService;
-        this.eventPublisher = eventPublisher;
+        this.tradeEventPublisher = tradeEventPublisher;
     }
 
     private static final AtomicLong SEQUENCE = new AtomicLong(1);
@@ -70,7 +65,9 @@ public class SettlementService {
                 tradeId, settlementReference, operationsUsername);
 
         log.info("Publishing TradeSettledEvent | Trade ID {}", tradeId);
-        eventPublisher.publishEvent(new TradeSettledEvent(tradeId, settlementReference, LocalDateTime.now()));
+        tradeEventPublisher.publishTradeSettled(
+                new TradeSettledEvent(tradeId, settlementReference, LocalDateTime.now())
+        );
 
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("tradeId", tradeId);

@@ -1,5 +1,6 @@
 package com.mercury.mercury.listener;
 
+import com.mercury.mercury.event.TradeApprovedEvent;
 import com.mercury.mercury.event.TradeCreatedEvent;
 import com.mercury.mercury.event.TradeSettledEvent;
 import com.mercury.mercury.notification.service.NotificationService;
@@ -29,7 +30,7 @@ public class NotificationEventListener {
     }
 
     @EventListener
-    public void handleTradeApproved(TradeCreatedEvent event){
+    public void handleTradeApproved(TradeApprovedEvent event){
         log.info("TradeApprovedEvent received for Trade ID: {}. Processing Notification.", event.getTradeId());
         try {
             notificationService.createApprovalNotification(event.getTradeId());

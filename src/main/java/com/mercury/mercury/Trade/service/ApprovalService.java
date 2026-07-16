@@ -6,10 +6,13 @@ import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.mapper.TradeMapper;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.specification.ApprovalValidator;
+import com.mercury.mercury.User.entity.Role;
 import com.mercury.mercury.User.entity.UserEntity;
 import com.mercury.mercury.User.repository.UserRepository;
 import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.event.TradeApprovedEvent;
+import com.mercury.mercury.event.TradeSettledEvent;
+import com.mercury.mercury.event.publisher.TradeEventPublisher;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -28,22 +31,26 @@ public class ApprovalService {
     private final TradeLifecycleService tradeLifecycleService;
     private final AuthenticatedUserService authenticatedUserService;
     private final ApplicationEventPublisher eventPublisher;
+    private final TradeEventPublisher tradeEventPublisher;
 
 
-    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher) {
+    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher, TradeEventPublisher tradeEventPublisher) {
         this.tradeRepo = tradeRepo;
         this.approvalValidator = approvalValidator;
         this.tradeLifecycleService = tradeLifecycleService;
         this.authenticatedUserService = authenticatedUserService;
         this.eventPublisher = eventPublisher;
+        this.tradeEventPublisher = tradeEventPublisher;
     }
 
     @Transactional
     public java.util.Map<String, Object> approveTrade(Long tradeId){
-        String managerUsername = authenticatedUserService.getCurrentUsername();
-        Long checkerUserId = authenticatedUserService.getCurrentUserId();
+        UserEntity managerEntity = authenticatedUserService.getCurrentUser();
+        Long checkerUserId = managerEntity.getUserId();
+        Role checkerRole = managerEntity.getRole();
 
-        log.info("User '{}' initiated approval validation process for trade ID: {}", managerUsername, tradeId);
+        log.info("User '{}' (Role: {}) initiated approval for trade ID: {}",
+                managerEntity.getUsername(), checkerRole, tradeId);
 
         TradeEntity trade = tradeRepo.findById(tradeId)
                 .orElseThrow(() -> new RuntimeException("Trade not found with ID: " + tradeId));
@@ -57,7 +64,7 @@ public class ApprovalService {
         log.info("checkerUserId: {}", checkerUserId);
 
         try {
-            approvalValidator.validateApproval(trade, checkerUserId);
+            approvalValidator.validateApproval(trade, checkerUserId, checkerRole);
             log.info("Checker rule evaluation succeeded for Trade ID: {}", tradeId);
         } catch (Exception e) {
             log.error("Approval failed for trade ID: {}. Reject Reason: {}", tradeId, e.getMessage());
@@ -71,14 +78,16 @@ public class ApprovalService {
         trade.setApprovedAt(LocalDateTime.now());
 
         TradeEntity saved = tradeRepo.save(trade);
-        log.info("User '{}' successfully approved and validated Trade ID: {}", managerUsername, tradeId);
+        log.info("User '{}' successfully approved and validated Trade ID: {}", managerEntity.getUsername(), tradeId);
         java.util.Map<String, Object> response = new java.util.HashMap<>();
         response.put("tradeId", saved.getTrade_id());
         response.put("status", "VALIDATED");
         response.put("message", "Trade approved and validated successfully.");
 
         log.info("Publishing TradeApprovedEvent for Trade ID: {}", tradeId);
-        eventPublisher.publishEvent(new TradeApprovedEvent(tradeId, authenticatedUserService.getCurrentUserId(), LocalDateTime.now()));
+        tradeEventPublisher.publishTradeApproved(
+                new TradeApprovedEvent(tradeId, checkerUserId, LocalDateTime.now())
+        );
         return response;
     }
 

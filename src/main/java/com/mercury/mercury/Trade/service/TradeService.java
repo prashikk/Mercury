@@ -15,6 +15,7 @@ import com.mercury.mercury.Trade.mapper.TradeMapper;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.event.TradeCreatedEvent;
+import com.mercury.mercury.event.publisher.TradeEventPublisher;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -37,15 +38,15 @@ public class TradeService {
     private final InstrumentRepo instrumentRepo;
     private final TradeMapper tradeMapper;
     private final AuthenticatedUserService authenticatedUserService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final TradeEventPublisher tradeEventPublisher;
 
-    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher){
+    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher){
         this.clientRepo = clientRepo;
         this.tradeRepo = tradeRepo;
         this.instrumentRepo = instrumentRepo;
         this.tradeMapper = tradeMapper;
         this.authenticatedUserService = authenticatedUserService;
-        this.eventPublisher = eventPublisher;
+        this.tradeEventPublisher = tradeEventPublisher;
     }
 
     @Transactional
@@ -105,8 +106,9 @@ public class TradeService {
 
         log.info("Publishing TradeCreatedEvent | Trade ID {}", savedTrade.getTrade_id());
 
-        eventPublisher.publishEvent(new TradeCreatedEvent(savedTrade.getTrade_id(), actorId, LocalDateTime.now()));
-
+        tradeEventPublisher.publishTradeCreated(
+                new TradeCreatedEvent(savedTrade.getTrade_id(), actorId, java.time.LocalDateTime.now())
+        );
         return tradeMapper.toResponseDTO(savedTrade);
     }
 
