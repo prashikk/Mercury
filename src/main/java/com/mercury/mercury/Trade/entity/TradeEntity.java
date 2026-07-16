@@ -84,10 +84,10 @@ public class TradeEntity {
     @Column(name = "settlement_Reference")
     private String settlementReference;
 
-    @Column(name = "settled_By")
+    @Column(name = "settled_by")
     private Long settled_by;
 
-    @Column(name = "settled_At")
+    @Column(name = "settled_at")
     private LocalDateTime settled_at;
 
     @Column(name = "approved_by")

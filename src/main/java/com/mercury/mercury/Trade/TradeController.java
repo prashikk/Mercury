@@ -12,7 +12,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/trades")
@@ -31,6 +33,7 @@ public class TradeController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('TRADER') or hasRole('ADMIN')")
     @Operation(summary = "Create a new Trade", description = "submit new trades in the lifeCycle.")
     public ResponseEntity<TradeResponseDTO> createTrade(@Valid @RequestBody TradeRequestDTO requestDTO){
         TradeResponseDTO response = tradeService.executeTrade(requestDTO);
@@ -62,18 +65,26 @@ public class TradeController {
     }
 
     @PostMapping("/{tradeId}/settle")
+    @PreAuthorize("hasRole('OPERATIONS') or hasRole('ADMIN')")
     @Operation(summary = "POST Settle Trade", description = "Executes automated back-office clearing pipeline actions to securely settle a validated transaction record instance.")
-    public ResponseEntity<java.util.Map<String , Object>> settleTrade(@PathVariable Long tradeId, @RequestParam(defaultValue = "1") Long processingUserId){
-        java.util.Map<String, Object> response = settlementService.settleTrade(tradeId, processingUserId);
+    public ResponseEntity<java.util.Map<String, Object>> settleTrade(
+            @PathVariable Long tradeId,
+            Authentication authentication) {
+        String operationsUsername = authentication.getName();
+
+        java.util.Map<String, Object> response = settlementService.settleTrade(tradeId, operationsUsername);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{tradeId}/approve")
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     @Operation(summary = "POST Approve Trade")
     public ResponseEntity<java.util.Map<String, Object>> approveTrade(
             @PathVariable Long tradeId,
-            @jakarta.validation.Valid @RequestBody com.mercury.mercury.Trade.dto.ApprovalRequestDTO request) {
-        java.util.Map<String, Object> response = approvalService.approveTrade(tradeId, request.getApprovedBy());
+            Authentication authentication) {
+
+        String managerUsername = authentication.getName();
+        java.util.Map<String, Object> response = approvalService.approveTrade(tradeId, managerUsername);
 
         return ResponseEntity.ok(response);
     }
