@@ -27,8 +27,8 @@ public class NotificationService {
     }
 
     public void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
-       //log.warn("[Simulation] Intercepting execution - triggering consumer retry backoff test loop...");
-       //throw new RuntimeException("Notification DB unavailable");
+    //   log.warn("[Simulation] Intercepting execution - triggering consumer retry backoff test loop...");
+     //  throw new RuntimeException("Notification DB unavailable");
 
        log.info("Notification Created"); // Expected trace point
 
