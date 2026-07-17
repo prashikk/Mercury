@@ -8,7 +8,10 @@ import com.mercury.mercury.notification.service.NotificationService;
 import com.mercury.mercury.notification.domain.Enum.NotificationType; // 💡 Import your notification type enum
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.kafka.annotation.BackOff;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.annotation.RetryableTopic;
+import org.springframework.kafka.retrytopic.DltStrategy;
 import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -23,6 +26,7 @@ public class TradeNotificationConsumer {
         this.objectMapper = objectMapper;
     }
 
+    @RetryableTopic(attempts = "3", backOff = @BackOff(delay = 2000), dltStrategy = DltStrategy.NO_DLT)
     @KafkaListener(topics = KafkaTopicConstants.TRADE_EVENTS, groupId = "notification-group")
     public void consumeTradeNotificationEvent(ConsumerRecord<String, Object> record) {
         String key = record.key(); // 💡 FIXED: Kafka ConsumerRecord method is lower-case record.key()
@@ -32,7 +36,7 @@ public class TradeNotificationConsumer {
 
         if (key == null) return;
 
-        try {
+     //   try {
             if (key.startsWith("CREATED_")) {
                 TradeCreatedEvent event = objectMapper.convertValue(payload, TradeCreatedEvent.class);
                 log.info("[Notification Consumer] Executing notification layout routing for Trade Created ID: {}", event.getTradeId());
@@ -69,8 +73,8 @@ public class TradeNotificationConsumer {
                         "Trade settled successfully."
                 );
             }
-        } catch (Exception e) {
-            log.error("[Notification Consumer] Target message conversion processing error on key '{}'", key, e);
-        }
+     //   } catch (Exception e) {
+     //       log.error("[Notification Consumer] Target message conversion processing error on key '{}'", key, e);
+      //  }
     }
 }

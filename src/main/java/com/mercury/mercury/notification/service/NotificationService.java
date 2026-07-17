@@ -27,24 +27,27 @@ public class NotificationService {
     }
 
     public void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
-        log.info("Notification Created"); // Expected trace point
+       log.warn("[Simulation] Intercepting execution - triggering consumer retry backoff test loop...");
+       throw new RuntimeException("Notification DB unavailable");
 
-        NotificationEntity notification = new NotificationEntity();
-        notification.setUserId(userId);
-        notification.setTradeId(tradeId);
-        notification.setType(type);
-        notification.setTitle(title);
-        notification.setMessage(message);
-        notification.setStatus(NotificationStatus.PENDING);
-        notification.setCreatedAt(LocalDateTime.now());
+      //  log.info("Notification Created"); // Expected trace point
 
-        try {
-            notificationRepository.save(notification);
-            log.info("Notification Saved"); // Expected trace point
-        } catch (Exception e) {
-            log.error("Notification Failed: {}", e.getMessage());
-            throw e;
-        }
+//        NotificationEntity notification = new NotificationEntity();
+//        notification.setUserId(userId);
+//        notification.setTradeId(tradeId);
+//        notification.setType(type);
+//        notification.setTitle(title);
+//        notification.setMessage(message);
+//        notification.setStatus(NotificationStatus.PENDING);
+//        notification.setCreatedAt(LocalDateTime.now());
+//
+//        try {
+//            notificationRepository.save(notification);
+//            log.info("Notification Saved"); // Expected trace point
+//        } catch (Exception e) {
+//            log.error("Notification Failed: {}", e.getMessage());
+//            throw e;
+//        }
     }
 
     @Transactional
