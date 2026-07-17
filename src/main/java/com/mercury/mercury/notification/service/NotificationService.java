@@ -26,7 +26,7 @@ public class NotificationService {
         this.authenticatedUserService = authenticatedUserService;
     }
 
-    private void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
+    public void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
         log.info("Notification Created"); // Expected trace point
 
         NotificationEntity notification = new NotificationEntity();
