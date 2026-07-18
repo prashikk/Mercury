@@ -4,6 +4,7 @@ import com.mercury.mercury.event.TradeApprovedEvent;
 import com.mercury.mercury.event.TradeCreatedEvent;
 import com.mercury.mercury.event.TradeSettledEvent;
 import com.mercury.mercury.kafka.producer.KafkaTopicConstants;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import com.mercury.mercury.notification.service.NotificationService;
 import com.mercury.mercury.notification.domain.Enum.NotificationType;
 import com.mercury.mercury.kafka.dlq.domain.FailedEvent;
@@ -26,11 +27,13 @@ public class TradeNotificationConsumer {
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
     private final FailedEventRepository failedEventRepository;
+    private final TradeMetricsService tradeMetricsService;
 
-    public TradeNotificationConsumer(NotificationService notificationService, ObjectMapper objectMapper, FailedEventRepository failedEventRepository) {
+    public TradeNotificationConsumer(NotificationService notificationService, ObjectMapper objectMapper, FailedEventRepository failedEventRepository, TradeMetricsService tradeMetricsService) {
         this.notificationService = notificationService;
         this.objectMapper = objectMapper;
         this.failedEventRepository = failedEventRepository;
+        this.tradeMetricsService = tradeMetricsService;
     }
 
     @RetryableTopic(attempts = "3", backOff = @BackOff(delay = 2000))
@@ -86,6 +89,7 @@ public class TradeNotificationConsumer {
 
     @DltHandler
     public void processDeadLetterQueueEvent(ConsumerRecord<String, Object> record) {
+        tradeMetricsService.incrementDlq();
         String key = record.key();
         Object payload = record.value();
 

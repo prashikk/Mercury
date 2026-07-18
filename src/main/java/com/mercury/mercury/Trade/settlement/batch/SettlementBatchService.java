@@ -4,6 +4,7 @@ import com.mercury.mercury.Trade.Enum.TradeStatus;
 import com.mercury.mercury.Trade.entity.TradeEntity;
 import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.Trade.service.SettlementService;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +21,12 @@ import java.util.List;
 public class SettlementBatchService {
     private final TradeRepo tradeRepo;
     private final SettlementService settlementService;
+    private final TradeMetricsService tradeMetricsService;
 
     public SettlementBatchResult executeSettlmentBatch(){
         LocalDateTime startTime = LocalDateTime.now();
+        tradeMetricsService.incrementBatchExecutions();
+
         log.info("[Batch Started] Initiating automated settlement engine routine execution pipeline.");
 
         List<TradeEntity> executableTrades= tradeRepo.findByStatus(TradeStatus.VALIDATED);
@@ -55,6 +59,8 @@ public class SettlementBatchService {
 
         log.info("[Batch Completed] Execution routine concluded cleanly. Processed: {}, Successful: {}, Failed: {}, Duration: {}",
                 processed, successful, failed, displayDuration);
+        long duration = java.time.Duration.between(startTime, endTime).toMillis();
+        tradeMetricsService.recordBatchPerformance(totalCount, successful, failed, duration);
 
         return SettlementBatchResult.builder()
                 .totalTrades(totalCount)

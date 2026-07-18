@@ -9,6 +9,7 @@ import com.mercury.mercury.User.entity.UserEntity;
 import com.mercury.mercury.User.repository.UserRepository;
 import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.event.publisher.TradeEventPublisher;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -29,13 +30,15 @@ public class SettlementService {
     private final SettlementValidator settlementValidator;
     private final AuthenticatedUserService authenticatedUserService;
     private final TradeEventPublisher tradeEventPublisher;
+    private final TradeMetricsService tradeMetricsService;
 
-    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher) {
+    public SettlementService(TradeRepo tradeRepo, TradeLifecycleService tradeLifecycleService, SettlementValidator settlementValidator, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher, TradeMetricsService tradeMetricsService) {
         this.tradeRepo = tradeRepo;
         this.tradeLifecycleService = tradeLifecycleService;
         this.settlementValidator = settlementValidator;
         this.authenticatedUserService = authenticatedUserService;
         this.tradeEventPublisher = tradeEventPublisher;
+        this.tradeMetricsService = tradeMetricsService;
     }
 
     private static final AtomicLong SEQUENCE = new AtomicLong(1);
@@ -50,8 +53,14 @@ public class SettlementService {
         TradeEntity trade = tradeRepo.findById(tradeId)
                 .orElseThrow(() -> new RuntimeException("Trade not found with ID: " + tradeId));
 
-        settlementValidator.validateSettlement(trade);
-        tradeLifecycleService.transationStatus(tradeId, TradeStatus.SETTLED);
+        try{
+            settlementValidator.validateSettlement(trade);
+            tradeLifecycleService.transationStatus(tradeId, TradeStatus.SETTLED);
+        }catch (Exception e){
+            tradeMetricsService.incrementFailed();
+            log.info("Settelement failed");
+            throw e;
+        }
 
         String settlementReference = generateSettlementReference();
         LocalDateTime now = java.time.LocalDateTime.now();
@@ -73,6 +82,7 @@ public class SettlementService {
         response.put("tradeId", tradeId);
         response.put("settlementReference", settlementReference);
         response.put("settledDate", trade.getSettled_date());
+        tradeMetricsService.incrementSettled();
         return response;
     }
 

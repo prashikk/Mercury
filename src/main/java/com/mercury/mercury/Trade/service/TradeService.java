@@ -16,6 +16,7 @@ import com.mercury.mercury.Trade.repository.TradeRepo;
 import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.event.TradeCreatedEvent;
 import com.mercury.mercury.event.publisher.TradeEventPublisher;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -39,19 +40,21 @@ public class TradeService {
     private final TradeMapper tradeMapper;
     private final AuthenticatedUserService authenticatedUserService;
     private final TradeEventPublisher tradeEventPublisher;
+    private final TradeMetricsService tradeMetricsService;
 
-    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher){
+    public TradeService(TradeRepo tradeRepo, ClientRepo clientRepo, InstrumentRepo instrumentRepo, TradeMapper tradeMapper, AuthenticatedUserService authenticatedUserService, TradeEventPublisher tradeEventPublisher, TradeMetricsService tradeMetricsService){
         this.clientRepo = clientRepo;
         this.tradeRepo = tradeRepo;
         this.instrumentRepo = instrumentRepo;
         this.tradeMapper = tradeMapper;
         this.authenticatedUserService = authenticatedUserService;
         this.tradeEventPublisher = tradeEventPublisher;
+        this.tradeMetricsService = tradeMetricsService;
     }
 
     @Transactional
     public TradeResponseDTO executeTrade(TradeRequestDTO requestDTO){
-
+        tradeMetricsService.incrementCreated();
         String currentActor = authenticatedUserService.getCurrentUsername();
         Long actorId = authenticatedUserService.getCurrentUserId();
 

@@ -13,6 +13,7 @@ import com.mercury.mercury.User.service.AuthenticatedUserService;
 import com.mercury.mercury.event.TradeApprovedEvent;
 import com.mercury.mercury.event.TradeSettledEvent;
 import com.mercury.mercury.event.publisher.TradeEventPublisher;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import com.mercury.mercury.notification.service.NotificationService;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +33,17 @@ public class ApprovalService {
     private final AuthenticatedUserService authenticatedUserService;
     private final ApplicationEventPublisher eventPublisher;
     private final TradeEventPublisher tradeEventPublisher;
+    private final TradeMetricsService tradeMetricsService;
 
 
-    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher, TradeEventPublisher tradeEventPublisher) {
+    public ApprovalService(TradeRepo tradeRepo, ApprovalValidator approvalValidator, TradeLifecycleService tradeLifecycleService, AuthenticatedUserService authenticatedUserService, ApplicationEventPublisher eventPublisher, TradeEventPublisher tradeEventPublisher, TradeMetricsService tradeMetricsService) {
         this.tradeRepo = tradeRepo;
         this.approvalValidator = approvalValidator;
         this.tradeLifecycleService = tradeLifecycleService;
         this.authenticatedUserService = authenticatedUserService;
         this.eventPublisher = eventPublisher;
         this.tradeEventPublisher = tradeEventPublisher;
+        this.tradeMetricsService = tradeMetricsService;
     }
 
     @Transactional
@@ -67,6 +70,7 @@ public class ApprovalService {
             approvalValidator.validateApproval(trade, checkerUserId, checkerRole);
             log.info("Checker rule evaluation succeeded for Trade ID: {}", tradeId);
         } catch (Exception e) {
+            tradeMetricsService.incrementFailed();
             log.error("Approval failed for trade ID: {}. Reject Reason: {}", tradeId, e.getMessage());
             throw e;
         }
@@ -88,6 +92,7 @@ public class ApprovalService {
         tradeEventPublisher.publishTradeApproved(
                 new TradeApprovedEvent(tradeId, checkerUserId, LocalDateTime.now())
         );
+        tradeMetricsService.incrementApproved();
         return response;
     }
 

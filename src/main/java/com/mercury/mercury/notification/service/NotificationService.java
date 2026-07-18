@@ -1,6 +1,7 @@
 package com.mercury.mercury.notification.service;
 
 import com.mercury.mercury.User.service.AuthenticatedUserService;
+import com.mercury.mercury.monitoring.TradeMetricsService;
 import com.mercury.mercury.notification.domain.Enum.NotificationStatus;
 import com.mercury.mercury.notification.domain.Enum.NotificationType;
 import com.mercury.mercury.notification.domain.NotificationEntity;
@@ -20,16 +21,18 @@ import java.time.LocalDateTime;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final TradeMetricsService tradeMetricsService;
 
-    public NotificationService(NotificationRepository notificationRepository, AuthenticatedUserService authenticatedUserService) {
+    public NotificationService(NotificationRepository notificationRepository, AuthenticatedUserService authenticatedUserService, TradeMetricsService tradeMetricsService) {
         this.notificationRepository = notificationRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.tradeMetricsService = tradeMetricsService;
     }
 
     public void saveNotification(Long userId, Long tradeId, NotificationType type, String title, String message) {
     //   log.warn("[Simulation] Intercepting execution - triggering consumer retry backoff test loop...");
      //  throw new RuntimeException("Notification DB unavailable");
-
+        tradeMetricsService.incrementNotifications();
        log.info("Notification Created"); // Expected trace point
 
         NotificationEntity notification = new NotificationEntity();

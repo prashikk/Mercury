@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/users/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/users/**", "/actuator/**").permitAll()
                         // CHANGE THIS LINE TO SECURE ENDPOINTS:
                         .anyRequest().authenticated()
                 );
