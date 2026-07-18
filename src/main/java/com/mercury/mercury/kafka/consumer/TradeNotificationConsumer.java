@@ -43,7 +43,7 @@ public class TradeNotificationConsumer {
 
         if (key == null) return;
 
-     //   try { //commented to test dlq
+        try { //commented to test dlq
             if (key.startsWith("CREATED_")) {
                 TradeCreatedEvent event = objectMapper.convertValue(payload, TradeCreatedEvent.class);
                 log.info("[Notification Consumer] Executing notification layout routing for Trade Created ID: {}", event.getTradeId());
@@ -80,9 +80,8 @@ public class TradeNotificationConsumer {
                         "Trade settled successfully."
                 );
             }
-     //   } catch (Exception e) {
-     //       log.error("[Notification Consumer] Target message conversion processing error on key '{}'", key, e);
-      //  }
+        } catch (Exception e) {
+            log.error("[Notification Consumer] Target message conversion processing error on key '{}'", key, e);}
     }
 
     @DltHandler
